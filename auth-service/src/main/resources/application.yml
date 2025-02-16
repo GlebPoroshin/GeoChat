@@ -1,7 +1,7 @@
 spring:
   application:
     name: auth-service
-  
+
   datasource:
     url: jdbc:postgresql://localhost:5432/geochat
     username: postgres
@@ -20,3 +20,22 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+
+  jwt:
+    secret: "super_secret_key_which_is_very_long"
+    access-token-expiration: 3600000  # 1 час
+    refresh-token-expiration: 2592000000  # 30 дней
+
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 6000ms
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: LOCAL_EMAIL
+    password: LOCAL_PASSWORD
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
