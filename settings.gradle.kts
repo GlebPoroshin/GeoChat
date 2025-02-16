@@ -5,3 +5,7 @@ pluginManagement {
 	}
 }
 rootProject.name = "GeoChat"
+include("auth-service")
+//include("user-service") TODO: Will be added soon
+//include("chat-service")
+//include("notification-service")
