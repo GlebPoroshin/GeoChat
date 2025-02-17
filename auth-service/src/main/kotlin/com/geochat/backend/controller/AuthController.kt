@@ -3,17 +3,22 @@ package com.geochat.backend.controller
 import com.geochat.backend.dto.AuthResponse
 import com.geochat.backend.dto.RegisterRequestDto
 import com.geochat.backend.service.AuthService
+import com.geochat.backend.service.EmailService
 import com.geochat.backend.service.PasswordResetService
 import com.geochat.backend.service.UserService
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 @RestController
 @RequestMapping("/api/auth")
 class AuthController(
     private val authService: AuthService,
-    private val passwordResetService: PasswordResetService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val emailService: EmailService,
+    private val redisTemplate: StringRedisTemplate
 ) {
     @PostMapping("/register")
     fun register(@RequestBody request: RegisterRequestDto): ResponseEntity<AuthResponse> {
@@ -46,24 +51,27 @@ class AuthController(
         return ResponseEntity.ok("Logged out successfully")
     }
 
+    //TODO: ПЕРЕИСПОЛЬЗОВАТЬ БЛЯДСКИЕ МЕТОДЫ ИЗ СЕРВИСА PASSWORDSERVICE
     @PostMapping("/forgot-password")
-    fun forgotPassword(@RequestParam email: String): ResponseEntity<String> {
-        passwordResetService.generateResetCode(email)
-        return ResponseEntity.ok("Код восстановления отправлен на email")
+    fun forgotPassword(@RequestParam email: String) {
+        val code = Random.nextInt(100000, 999999).toString()
+        redisTemplate.opsForValue().set("password-reset:$email", code, 30, TimeUnit.MINUTES)
+        emailService.sendVerificationCode(email, code)
     }
 
     @PostMapping("/verify-code")
-    fun verifyCode(@RequestParam email: String, @RequestParam code: String): ResponseEntity<Boolean> {
-        return ResponseEntity.ok(passwordResetService.verifyResetCode(email, code))
+    fun verifyCode(@RequestParam email: String, @RequestParam code: String): Boolean {
+        val storedCode = redisTemplate.opsForValue().get("password-reset:$email")
+        return storedCode == code
     }
 
     @PostMapping("/reset-password")
-    fun resetPassword(
-        @RequestParam email: String,
-        @RequestParam code: String,
-        @RequestParam newPassword: String
-    ): ResponseEntity<String> {
-        passwordResetService.resetPassword(email, code, newPassword)
-        return ResponseEntity.ok("Пароль успешно изменён")
+    fun resetPassword(@RequestParam email: String, @RequestParam newPassword: String): Boolean {
+        val storedCode = redisTemplate.opsForValue().get("password-reset:$email") ?: return false
+
+        userService.updatePassword(email, newPassword)
+        redisTemplate.delete("password-reset:$email")
+        return true
     }
 }
+

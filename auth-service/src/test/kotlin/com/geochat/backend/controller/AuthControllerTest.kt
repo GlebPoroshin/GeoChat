@@ -18,11 +18,32 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import java.util.concurrent.TimeUnit
+import kotlin.random.Random
+import org.springframework.context.annotation.Import
+import com.geochat.backend.config.SecurityConfig
+import com.geochat.backend.AuthServiceApplication
 
+/**
+ * Интеграционные тесты для [AuthController].
+ * 
+ * Тесты проверяют основные сценарии аутентификации и авторизации:
+ * - Регистрация нового пользователя
+ * - Вход в систему
+ * - Обновление токена
+ * - Выход из системы
+ * - Сброс пароля
+ *
+ * Для тестов используется:
+ * - H2 in-memory база данных
+ * - Redis для хранения токенов и кодов сброса пароля
+ * - MockMvc для моковых запросов
+ */
 @ExtendWith(SpringExtension::class)
-@SpringBootTest
+@SpringBootTest(classes = [AuthServiceApplication::class])  // Явно указываем главный класс
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(SecurityConfig::class)  // Подключаем конфигурацию безопасности
 class AuthControllerTest @Autowired constructor(
     private val mockMvc: MockMvc,
     private val objectMapper: ObjectMapper,
@@ -34,12 +55,26 @@ class AuthControllerTest @Autowired constructor(
     private val testPassword = "password123"
     private val testNickname = "testUser"
 
+    /**
+     * Очищает тестовые данные перед каждым прогоном:
+     * - Удаляет всех пользователей из БД
+     * - Удаляет коды сброса пароля из Redis
+     * - Удаляет refresh токены из Redis
+     */
     @BeforeEach
     fun setup() {
         userRepository.deleteAll()
-        redisTemplate.delete(testEmail)
+        redisTemplate.delete("password-reset:$testEmail")
+        redisTemplate.delete("refresh:$testEmail")
     }
 
+    /**
+     * Проверяет успешную регистрацию нового пользователя.
+     * 
+     * Ожидаемый результат:
+     * - 200 OK
+     * - В ответе приходят userId, accessToken и refreshToken
+     */
     @Test
     fun `should register a new user`() {
         val requestBody = mapOf(
@@ -57,12 +92,16 @@ class AuthControllerTest @Autowired constructor(
             .andExpect(MockMvcResultMatchers.jsonPath("$.userId").exists())
             .andExpect(MockMvcResultMatchers.jsonPath("$.accessToken").exists())
             .andExpect(MockMvcResultMatchers.jsonPath("$.refreshToken").exists())
-            .andReturn()
     }
 
+    /**
+     * Проверяет ошибку регистрации, если email уже существует.
+     * 
+     * Ожидаемый результат:
+     * - 400 Bad Request
+     */
     @Test
     fun `should not register user with existing email`() {
-        // Создаем первого пользователя
         createTestUser()
 
         val requestBody = mapOf(
@@ -79,6 +118,13 @@ class AuthControllerTest @Autowired constructor(
             .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
+    /**
+     * Проверяет успешный вход в систему.
+     * 
+     * Ожидаемый результат:
+     * - 200 OK
+     * - В ответе прихдят userId, accessToken и refreshToken
+     */
     @Test
     fun `should login user successfully`() {
         createTestUser()
@@ -94,10 +140,19 @@ class AuthControllerTest @Autowired constructor(
             .andExpect(MockMvcResultMatchers.jsonPath("$.refreshToken").exists())
     }
 
+    /**
+     * Проверяет успешное обновление токена.
+     * 
+     * Ожидаемый результат:
+     * - 200 OK
+     * - В ответе приходят userId, accessToken и refreshToken
+     */
     @Test
     fun `should refresh token successfully`() {
         createTestUser()
         val refreshToken = loginAndGetRefreshToken()
+
+        redisTemplate.opsForValue().set("refresh:$testEmail", refreshToken, 30, TimeUnit.DAYS)
 
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/refresh")
@@ -110,18 +165,41 @@ class AuthControllerTest @Autowired constructor(
             .andExpect(MockMvcResultMatchers.jsonPath("$.refreshToken").exists())
     }
 
+    /**
+     * Проверяет успешный выход из системы.
+     * 
+     * Ожидаемый результат:
+     * - 200 OK
+     */
     @Test
     fun `should logout successfully`() {
         createTestUser()
-        loginAndGetRefreshToken()
+        val result = mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/login")
+                .param("email", testEmail)
+                .param("password", testPassword)
+        )
+            .andReturn()
+
+        val response = objectMapper.readValue(
+            result.response.contentAsString,
+            AuthResponse::class.java
+        )
 
         mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/logout")
                 .param("email", testEmail)
+                .header("Authorization", "Bearer ${response.accessToken}")
         )
             .andExpect(MockMvcResultMatchers.status().isOk)
     }
 
+    /**
+     * Проверяет генерацию кода для сброса пароля.
+     * 
+     * Ожидаемый результат:
+     * - 200 OK
+     */
     @Test
     fun `should generate reset code`() {
         createTestUser()
@@ -133,6 +211,13 @@ class AuthControllerTest @Autowired constructor(
             .andExpect(MockMvcResultMatchers.status().isOk)
     }
 
+    /**
+     * Проверяет верификацию кода сброса пароля.
+     * 
+     * Ожидаемый результат:
+     * - HTTP 200 OK
+     * - Ответ содержит "true"
+     */
     @Test
     fun `should verify reset code`() {
         createTestUser()
@@ -147,6 +232,19 @@ class AuthControllerTest @Autowired constructor(
             .andExpect(MockMvcResultMatchers.content().string("true"))
     }
 
+    /**
+     * Проверяет процесс сброса пароля.
+     * 
+     * Шаги:
+     * - Успешная смена пароля
+     * - Невозможность входа со старым паролем
+     * - Возможность входа с новым паролем
+     * 
+     * Ожидаемый результат:
+     * - 200 OK при сбросе пароля
+     * - 401 Unauthorized при попытке входа со старым паролем
+     * - 200 OK при входе с новым паролем
+     */
     @Test
     fun `should reset password`() {
         createTestUser()
@@ -159,8 +257,27 @@ class AuthControllerTest @Autowired constructor(
                 .param("newPassword", "newPassword123")
         )
             .andExpect(MockMvcResultMatchers.status().isOk)
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/login")
+                .param("email", testEmail)
+                .param("password", testPassword) // старый пароль
+        )
+            .andExpect(MockMvcResultMatchers.status().isForbidden)
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/login")
+                .param("email", testEmail)
+                .param("password", "newPassword123")
+        )
+            .andExpect(MockMvcResultMatchers.status().isOk)
     }
 
+    /**
+     * Создает тестового пользователя в базе данных.
+     * 
+     * @return Созданный пользователь
+     */
     private fun createTestUser() {
         val user = UserEntity(
             nickname = testNickname,
@@ -170,6 +287,11 @@ class AuthControllerTest @Autowired constructor(
         userRepository.save(user)
     }
 
+    /**
+     * Выполняет вход и возвращает refresh token.
+     * 
+     * @return Refresh token для авторизованного пользователя
+     */
     private fun loginAndGetRefreshToken(): String {
         val result = mockMvc.perform(
             MockMvcRequestBuilders.post("/api/auth/login")
@@ -182,10 +304,18 @@ class AuthControllerTest @Autowired constructor(
             result.response.contentAsString,
             AuthResponse::class.java
         )
+
         return response.refreshToken
     }
 
+    /**
+     * Генерирует код сброса пароля и сохраняет его в Redis.
+     * 
+     * @return Сгенерированный код сброса пароля
+     */
     private fun generateResetCode(): String {
-        return "123456"
+        val code = Random.nextInt(100000, 999999).toString()
+        redisTemplate.opsForValue().set("password-reset:$testEmail", code, 30, TimeUnit.MINUTES)
+        return code
     }
 }

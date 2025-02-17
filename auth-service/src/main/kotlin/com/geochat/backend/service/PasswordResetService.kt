@@ -15,7 +15,7 @@ class PasswordResetService(
     fun generateResetCode(email: String) {
         val code = Random.nextInt(100000, 999999).toString()
         redisTemplate.opsForValue().set("reset_code:$email", code, 10, TimeUnit.MINUTES)
-        emailService.sendResetCode(email, code)
+        emailService.sendVerificationCode(email, code)
     }
 
     fun verifyResetCode(email: String, code: String): Boolean {

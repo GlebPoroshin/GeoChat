@@ -22,11 +22,18 @@ class SecurityConfig(
     ): SecurityFilterChain {
         http
             .csrf { it.disable() }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers("/api/auth/**").permitAll()
+                it.requestMatchers(
+                    "/api/auth/register",
+                    "/api/auth/login",
+                    "/api/auth/refresh",
+                    "/api/auth/forgot-password",
+                    "/api/auth/verify-code",
+                    "/api/auth/reset-password"
+                ).permitAll()
                 it.anyRequest().authenticated()
             }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
 

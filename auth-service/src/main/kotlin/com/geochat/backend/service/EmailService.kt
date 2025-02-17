@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service
 @Service
 class EmailService(private val mailSender: JavaMailSender) {
 
-    fun sendResetCode(email: String, code: String) {
+    fun sendVerificationCode(email: String, code: String) {
         val message = mailSender.createMimeMessage()
-        val helper = MimeMessageHelper(message)
+        val helper = MimeMessageHelper(message, true)
 
         helper.setTo(email)
-        helper.setSubject("Восстановление пароля")
-        helper.setText("Ваш код для сброса пароля: $code", false)
+        helper.setSubject("Восстановление пароля - GeoChat")
+        helper.setText("Ваш код для восстановления пароля: <b>$code</b>", true)
 
         mailSender.send(message)
     }

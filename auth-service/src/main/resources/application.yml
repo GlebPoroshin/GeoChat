@@ -29,13 +29,14 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: LOCAL_EMAIL
-    password: LOCAL_PASSWORD
+    username: geo.chat.rut@gmail.com #TODO: Вынести в локальные переменные среды
+    password: iyxu hddd lrig xaqh #TODO: Вынести в локальные переменные среды
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
 
+  #TODO: Вынести в локальные переменные среды
 jwt:
-  secret: "super_secret_key_which_is_very_long"
+  secret: c3VwZXJfc2VjcmV0X2tleV93aGljaF9pc192ZXJ5X2xvbmc= #TODO: Вынести в локальные переменные среды
   access-token-expiration: 3600000
   refresh-token-expiration: 2592000000

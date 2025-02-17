@@ -1,7 +1,9 @@
 package com.geochat.backend.service
 
 import com.geochat.backend.dto.AuthResponse
+import com.geochat.backend.dto.exceptions.EmailAlreadyExistsException
 import com.geochat.backend.dto.UserDto
+import com.geochat.backend.dto.exceptions.NickNameAlreadyExistsException
 import com.geochat.backend.model.UserEntity
 import com.geochat.backend.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -15,10 +17,10 @@ class UserService(
 ) {
     fun register(nickname: String, email: String, password: String): AuthResponse {
         if (userRepository.findByEmail(email) != null) {
-            throw IllegalArgumentException("Email уже используется")
+            throw EmailAlreadyExistsException("Email уже используется")
         }
         if (userRepository.findByNickname(nickname) != null) {
-            throw IllegalArgumentException("Никнейм уже используется")
+            throw NickNameAlreadyExistsException("Никнейм уже используется")
         }
 
         val user = userRepository.save(UserEntity(

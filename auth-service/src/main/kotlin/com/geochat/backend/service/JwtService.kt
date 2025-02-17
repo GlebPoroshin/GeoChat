@@ -23,7 +23,12 @@ class JwtService {
     var refreshTokenExpiration: Long = 0
 
     fun generateAccessToken(email: String): String {
-        return generateToken(email, accessTokenExpiration)
+        return Jwts.builder()
+            .setSubject(email)
+            .setIssuedAt(Date())
+            .setExpiration(Date(System.currentTimeMillis() + accessTokenExpiration))
+            .signWith(getSignKey(), SignatureAlgorithm.HS256)
+            .compact()
     }
 
     fun generateRefreshToken(email: String): String {

@@ -16,6 +16,10 @@ repositories {
 }
 
 dependencies {
+
+    /**
+     * Зависимости для функционала
+     */
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-cache")
@@ -37,6 +41,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
 
+    /**
+     * Зависимости для тестов
+     */
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webflux")
 
@@ -49,6 +56,12 @@ dependencies {
     testImplementation("com.redis:testcontainers-redis:2.2.2")
 
     testImplementation("com.h2database:h2")
+
+    /**
+     * Зависимость для netty сервера
+     */
+    implementation("io.netty:netty-resolver-dns-native-macos:4.1.107.Final:osx-aarch_64")
+
 }
 
 tasks.withType<Copy> {
