@@ -1,7 +1,10 @@
 package com.geochat.backend.controller
 
+import com.geochat.backend.dto.AuthResponse
+import com.geochat.backend.dto.RegisterRequestDto
 import com.geochat.backend.service.AuthService
 import com.geochat.backend.service.PasswordResetService
+import com.geochat.backend.service.UserService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -9,14 +12,23 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/auth")
 class AuthController(
     private val authService: AuthService,
-    private val passwordResetService: PasswordResetService
+    private val passwordResetService: PasswordResetService,
+    private val userService: UserService
 ) {
+    @PostMapping("/register")
+    fun register(@RequestBody request: RegisterRequestDto): ResponseEntity<AuthResponse> {
+        return ResponseEntity.ok(userService.register(
+            nickname = request.nickname,
+            email = request.email,
+            password = request.password
+        ))
+    }
 
     @PostMapping("/login")
     fun login(
         @RequestParam email: String,
         @RequestParam password: String
-    ): ResponseEntity<Map<String, String>> {
+    ): ResponseEntity<AuthResponse> {
         return ResponseEntity.ok(authService.authenticate(email, password))
     }
 
@@ -24,7 +36,7 @@ class AuthController(
     fun refreshToken(
         @RequestParam email: String,
         @RequestParam refreshToken: String
-    ): ResponseEntity<Map<String, String>> {
+    ): ResponseEntity<AuthResponse> {
         return ResponseEntity.ok(authService.refreshToken(email, refreshToken))
     }
 

@@ -21,11 +21,6 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-  jwt:
-    secret: "super_secret_key_which_is_very_long"
-    access-token-expiration: 3600000  # 1 час
-    refresh-token-expiration: 2592000000  # 30 дней
-
   redis:
     host: localhost
     port: 6379
@@ -39,3 +34,8 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
+
+jwt:
+  secret: "super_secret_key_which_is_very_long"
+  access-token-expiration: 3600000
+  refresh-token-expiration: 2592000000

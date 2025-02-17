@@ -6,24 +6,28 @@ import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Service
 import java.security.Key
 import java.util.*
 
 @Service
-class JwtService(
-    @Value("\${jwt.secret}") private val secret: String,
-    @Value("\${jwt.access-token-expiration}") private val accessTokenExpiration: Long,
-    @Value("\${jwt.refresh-token-expiration}") private val refreshTokenExpiration: Long
-) {
+class JwtService {
 
-    fun generateAccessToken(userDetails: UserDetails): String {
-        return generateToken(userDetails.username, accessTokenExpiration)
+    @Value("\${jwt.secret}")
+    lateinit var secret: String
+
+    @Value("\${jwt.access-token-expiration}")
+    var accessTokenExpiration: Long = 0
+
+    @Value("\${jwt.refresh-token-expiration}")
+    var refreshTokenExpiration: Long = 0
+
+    fun generateAccessToken(email: String): String {
+        return generateToken(email, accessTokenExpiration)
     }
 
-    fun generateRefreshToken(userDetails: UserDetails): String {
-        return generateToken(userDetails.username, refreshTokenExpiration)
+    fun generateRefreshToken(email: String): String {
+        return generateToken(email, refreshTokenExpiration)
     }
 
     private fun generateToken(email: String, expiration: Long): String {
@@ -35,17 +39,17 @@ class JwtService(
             .compact()
     }
 
-    fun validateToken(token: String, email: String): Boolean {
-        val emailFromToken = extractEmail(token)
-        return emailFromToken == email && !isTokenExpired(token)
+    fun validateToken(token: String): Boolean {
+        return try {
+            val claims = extractClaims(token)
+            claims.expiration.after(Date())
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun extractEmail(token: String): String? {
         return extractClaims(token).subject
-    }
-
-    private fun isTokenExpired(token: String): Boolean {
-        return extractClaims(token).expiration.before(Date())
     }
 
     private fun extractClaims(token: String): Claims {

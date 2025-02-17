@@ -1,6 +1,7 @@
 package com.geochat.backend.model
 
 import jakarta.persistence.*
+import org.hibernate.annotations.GenericGenerator
 import java.util.*
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
@@ -8,15 +9,23 @@ import org.springframework.security.core.userdetails.UserDetails
 @Entity
 @Table(name = "users")
 data class UserEntity(
+
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     val id: UUID? = null,
+
+    @Column(unique = true, nullable = false)
+    val nickname: String,
 
     @Column(unique = true, nullable = false)
     val email: String,
 
     @Column(nullable = false)
     private val password: String,
+
+    @Column(nullable = false, updatable = false)
+    val createdAt: Date = Date(),
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -29,15 +38,15 @@ data class UserEntity(
 
     override fun getAuthorities(): Collection<GrantedAuthority> = roles
 
-    override fun getPassword() = password
+    override fun getPassword(): String = password
 
-    override fun getUsername() = email
+    override fun getUsername(): String = email
 
-    override fun isAccountNonExpired() = true
+    override fun isAccountNonExpired(): Boolean = true
 
-    override fun isAccountNonLocked() = true
+    override fun isAccountNonLocked(): Boolean = true
 
-    override fun isCredentialsNonExpired() = true
+    override fun isCredentialsNonExpired(): Boolean = true
 
-    override fun isEnabled() = true
+    override fun isEnabled(): Boolean = true
 }

@@ -6,10 +6,15 @@ plugins {
     kotlin("plugin.jpa") version "1.9.25"
 }
 
+tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
+    mainClass.set("com.geochat.backend.AuthServiceApplication")
+}
+
 repositories {
     mavenCentral()
     maven { url = uri("https://repo.spring.io/milestone") }
 }
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-mail")
@@ -34,9 +39,36 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webflux")
+
     testImplementation("org.mockito:mockito-core")
 
-    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-bom:1.20.4")
     testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.testcontainers:redis")
+    testImplementation("org.testcontainers:junit-jupiter")
+
+    testImplementation("com.redis:testcontainers-redis:2.2.2")
+
+    testImplementation("com.h2database:h2")
+}
+
+tasks.withType<Copy> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+sourceSets {
+    test {
+        kotlin {
+            srcDirs("src/test/kotlin")
+        }
+        resources {
+            srcDirs("src/test/resources")
+        }
+    }
 }
