@@ -4,7 +4,6 @@ import com.geochat.backend.dto.AuthResponse
 import com.geochat.backend.dto.RegisterRequestDto
 import com.geochat.backend.service.AuthService
 import com.geochat.backend.service.EmailService
-import com.geochat.backend.service.PasswordResetService
 import com.geochat.backend.service.UserService
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.http.ResponseEntity
