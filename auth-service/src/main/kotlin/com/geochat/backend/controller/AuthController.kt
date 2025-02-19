@@ -66,7 +66,7 @@ class AuthController(
 
     @PostMapping("/reset-password")
     fun resetPassword(@RequestParam email: String, @RequestParam newPassword: String): Boolean {
-        val storedCode = redisTemplate.opsForValue().get("password-reset:$email") ?: return false
+        if(redisTemplate.opsForValue().get("password-reset:$email").isNullOrEmpty())  return false
 
         userService.updatePassword(email, newPassword)
         redisTemplate.delete("password-reset:$email")

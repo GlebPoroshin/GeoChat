@@ -22,26 +22,14 @@ class JwtAuthenticationFilter(
         response: jakarta.servlet.http.HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val requestURI = request.requestURI
-
-        // Разрешаем Swagger
-        if (requestURI.startsWith("/v3/api-docs") ||
-            requestURI.startsWith("/swagger-ui") ||
-            requestURI.startsWith("/swagger-ui.html") ||
-            requestURI.startsWith("/swagger-resources") ||
-            requestURI.startsWith("/webjars")) {
-            filterChain.doFilter(request, response)
-            return
-        }
-
         val authHeader = request.getHeader("Authorization")
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        val startOfToken = "Bearer "
+        if (authHeader == null || !authHeader.startsWith(startOfToken)) {
             filterChain.doFilter(request, response)
             return
         }
 
-        val token = authHeader.substring(7)
+        val token = authHeader.split(startOfToken).first()
         val email = jwtService.extractEmail(token)
 
         if (email != null && SecurityContextHolder.getContext().authentication == null) {
