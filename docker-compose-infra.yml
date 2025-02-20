@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL (основная реляционная БД)
   postgres:
@@ -81,7 +79,7 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka:9092
     ports:
-      - "8081:8080"
+      - "9093:9093"
     networks:
       - geochat_network
 
@@ -107,3 +105,6 @@ volumes:
 
 networks:
   geochat_network:
+    external: true
+
+x-profile: infra

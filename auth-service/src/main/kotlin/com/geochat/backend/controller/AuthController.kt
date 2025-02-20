@@ -4,7 +4,6 @@ import com.geochat.backend.dto.AuthResponse
 import com.geochat.backend.dto.RegisterRequestDto
 import com.geochat.backend.service.AuthService
 import com.geochat.backend.service.EmailService
-import com.geochat.backend.service.PasswordResetService
 import com.geochat.backend.service.UserService
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.http.ResponseEntity
@@ -67,7 +66,7 @@ class AuthController(
 
     @PostMapping("/reset-password")
     fun resetPassword(@RequestParam email: String, @RequestParam newPassword: String): Boolean {
-        val storedCode = redisTemplate.opsForValue().get("password-reset:$email") ?: return false
+        if(redisTemplate.opsForValue().get("password-reset:$email").isNullOrEmpty())  return false
 
         userService.updatePassword(email, newPassword)
         redisTemplate.delete("password-reset:$email")

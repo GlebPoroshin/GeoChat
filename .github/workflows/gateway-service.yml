@@ -1,0 +1,70 @@
+name: Gateway-Service CI/CD
+
+on:
+  pull_request:
+    branches: [ "develop" ]
+    paths:
+      - "gateway-service/**"
+
+  push:
+    branches: [ "main" ]
+    paths:
+      - "gateway-service/**"
+
+jobs:
+  build-test:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    name: Build & Test (PR)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Build gateway-service (without tests)
+        run: ./gradlew clean :gateway-service:build -x test
+
+      - name: Run unit tests for gateway-service
+        run: ./gradlew :gateway-service:test
+
+  build-push:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    name: Build, Test & Push (Main)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Build gateway-service (without tests)
+        run: ./gradlew clean :gateway-service:build -x test
+
+      - name: Run unit tests for gateway-service
+        run: ./gradlew :gateway-service:test
+
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image for gateway-service
+        run: |
+          docker build \
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -t ${{ secrets.DOCKER_USERNAME }}/gateway-service:latest ./gateway-service
+
+      - name: Push Docker image to DockerHub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/gateway-service:latest
