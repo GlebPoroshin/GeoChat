@@ -13,9 +13,9 @@ spring:
 
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/geochat}
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -35,23 +35,23 @@ spring:
     validate-on-migrate: false
 
   redis:
-    host: ${SPRING_REDIS_HOST:localhost}
-    port: 6379
+    host: ${SPRING_REDIS_HOST}
+    port: ${SPRING_REDIS_PORT}
     timeout: 6000ms
 
   mail:
     host: smtp.gmail.com
     port: 587
-    username: geo.chat.rut@gmail.com #TODO: Вынести в локальные переменные среды
-    password: iyxu hddd lrig xaqh #TODO: Вынести в локальные переменные среды
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
 
 jwt:
-  secret: c3VwZXJfc2VjcmV0X2tleV93aGljaF9pc192ZXJ5X2xvbmc= #TODO: Вынести в локальные переменные среды
-  access-token-expiration: 3600000
-  refresh-token-expiration: 2592000000
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
 
 management:
   endpoints:

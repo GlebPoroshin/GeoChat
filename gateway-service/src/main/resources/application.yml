@@ -9,8 +9,8 @@ spring:
     gateway:
       routes:
         - id: auth-service
-#          uri: http://auth-service:8081 Для запуска сервисов через докер
-          uri: http://localhost:8081
+          uri: http://auth-service:8081 #Для запуска сервисов через докер
+#          uri: http://localhost:8081 # Для запуска через .jar файлы без обертки в виде докера
           predicates:
             - Path=/auth-service/**
           filters:
@@ -22,11 +22,14 @@ spring:
               allowedMethods: '*'
               allowedHeaders: '*'
 
-  webflux:
-    cors:
-      allowed-origins: "*"
-      allowed-methods: "*"
-      allowed-headers: "*"
+jwt:
+  secret: ${JWT_SECRET}
+
+webflux:
+  cors:
+    allowed-origins: "*"
+    allowed-methods: "*"
+    allowed-headers: "*"
 
 springdoc:
   api-docs:
