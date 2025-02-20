@@ -1,0 +1,36 @@
+name: GeoChat Deployment
+
+on:
+  workflow_run:
+    workflows: [ "Auth-Service CI/CD", "Gateway-Service CI/CD", "User-Service CI/CD" ]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy All Services
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Pull latest Docker images
+        run: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
+          docker pull ${{ secrets.DOCKER_USERNAME }}/gateway-service:latest
+          docker pull ${{ secrets.DOCKER_USERNAME }}/user-service:latest
+
+      - name: Run Docker Compose
+        run: |
+          docker compose -f docker-compose-infra.yml -f docker-compose-services.yml up -d --remove-orphans
+
+      - name: Show running containers
+        run: docker ps -a
