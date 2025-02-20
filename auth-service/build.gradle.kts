@@ -1,12 +1,25 @@
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
-    id("org.springframework.boot") version "3.5.0-M1"
+    id("org.springframework.boot") version "3.2.2"
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
+    mainClass.set("com.geochat.backend.AuthServiceApplication")
+    archiveClassifier.set("boot")
+}
+
+tasks.withType<Copy> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.getByName<Jar>("jar") {
+    enabled = false
+}
+
+springBoot {
     mainClass.set("com.geochat.backend.AuthServiceApplication")
 }
 
@@ -62,10 +75,11 @@ dependencies {
      */
     implementation("io.netty:netty-resolver-dns-native-macos:4.1.107.Final:osx-aarch_64")
 
-}
+    /**
+     * Зависимость для документации
+     */
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
-tasks.withType<Copy> {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 tasks.test {

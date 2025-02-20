@@ -6,11 +6,11 @@ import org.springframework.boot.runApplication
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
-class AuthServiceApplication {
+class GatewayServiceApplication {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            runApplication<AuthServiceApplication>(*args)
+            runApplication<GatewayServiceApplication>(*args)
         }
     }
 }

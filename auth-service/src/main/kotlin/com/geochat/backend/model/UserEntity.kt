@@ -15,7 +15,7 @@ data class UserEntity(
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     val id: UUID? = null,
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, name = "username")
     val nickname: String,
 
     @Column(unique = true, nullable = false)
